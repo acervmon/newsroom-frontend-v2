@@ -42,45 +42,56 @@ export default function AdminEntrevistas() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!videoFile) {
-      setMensaje(language === "ES" ? "Debes seleccionar un video antes de subir" : "You must select a video before uploading");
-      return;
-    }
+
+    if (!videoFile) return setMensaje("Debes seleccionar un video");
 
     setSubiendo(true);
     setMensaje("");
 
     try {
-      const formData = new FormData();
-      formData.append("video", videoFile);
-      formData.append("tituloES", tituloES);
-      formData.append("tituloEN", tituloEN);
-      formData.append("descripcionES", descripcionES);
-      formData.append("descripcionEN", descripcionEN);
-      formData.append("fecha", fecha);
-
-      const res = await axios.post("/api/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      // 1️⃣ Pedir URL firmada
+      const presignRes = await fetch("/api/upload-url", {
+        method: "POST",
+        body: JSON.stringify({
+          fileName: videoFile.name,
+          fileType: videoFile.type
+        }),
       });
 
-      if (res.status === 200) {
-        setMensaje(language === "ES" ? "✅ Entrevista subida correctamente" : "✅ Interview uploaded successfully");
-        setTituloES("");
-        setTituloEN("");
-        setDescripcionES("");
-        setDescripcionEN("");
-        setFecha("");
-        setVideoFile(null);
-        setVideoPreview(null);
-      } else {
-        setMensaje(language === "ES" ? "❌ Error subiendo la entrevista" : "❌ Error uploading interview");
-      }
+      const { uploadURL, key } = await presignRes.json();
+
+      // 2️⃣ Subir a AWS S3 (directo desde el navegador)
+      await fetch(uploadURL, {
+        method: "PUT",
+        headers: { "Content-Type": videoFile.type },
+        body: videoFile
+      });
+
+      // 3️⃣ Guardar los metadatos en tu API interna
+      await axios.post("/api/upload", {
+        tituloES,
+        tituloEN,
+        descripcionES,
+        descripcionEN,
+        fecha,
+        videoUrl: `https://${process.env.NEXT_PUBLIC_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${key}`
+      });
+
+      setMensaje("✅ Entrevista subida correctamente");
+      setTituloES("");
+      setTituloEN("");
+      setDescripcionES("");
+      setDescripcionEN("");
+      setFecha("");
+      setVideoFile(null);
+      setVideoPreview(null);
+
     } catch (err) {
       console.error(err);
-      setMensaje(language === "ES" ? "❌ Error subiendo la entrevista" : "❌ Error uploading interview");
-    } finally {
-      setSubiendo(false);
+      setMensaje("❌ Error subiendo el video");
     }
+
+    setSubiendo(false);
   };
 
   return (

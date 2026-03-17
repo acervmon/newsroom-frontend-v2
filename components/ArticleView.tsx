@@ -311,43 +311,124 @@ export default function ArticleView({ article, allArticles }: any) {
         </section>
       )}
 
+
       {/* DEBATE */}
       <section>
         <h2 className="text-4xl font-extrabold mb-8">{t.debate}</h2>
 
-        {!anonymous && (
-          <input
-            placeholder={t.name}
-            className="w-full mb-6 p-5 rounded-xl border text-xl"
-          />
-        )}
+        {/* ---------- ESTADOS EXTRAS PARA EL DEBATE ---------- */}
+        {/* Los defines aquí mismo para que puedas copiar/pegar sin buscar */}
+        {(() => {
+          const [comments, setComments] = useState<any[]>([]);
+          const [name, setName] = useState("");
 
-        <textarea
-          placeholder={t.placeholder}
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          className="w-full p-6 rounded-xl border min-h-[160px] text-xl mb-6"
-        />
+          /* Cargar comentarios al abrir */
+          useEffect(() => {
+            fetch(`/api/comments?articleId=${article.id}`)
+              .then((r) => r.json())
+              .then((data) => setComments(data));
+          }, [article.id]);
 
-        <label className="flex items-center gap-3 mb-8 text-lg">
-          <input
-            type="checkbox"
-            checked={anonymous}
-            onChange={() => setAnonymous(!anonymous)}
-          />
-          {t.anonymous}
-        </label>
+          /* Enviar comentario */
+          const sendComment = async () => {
+            if (!comment.trim()) return;
 
-        <button
-          disabled={!comment.trim()}
-          className={`px-10 py-5 rounded-full text-xl font-bold ${
-            comment.trim()
-              ? "bg-gray-500 text-white"
-              : "bg-gray-300 text-gray-500 cursor-not-allowed"
-          }`}
-        >
-          {t.send}
-        </button>
+            const body = {
+              articleId: article.id,
+              name: anonymous ? "Anónimo" : name || "Sin nombre",
+              text: comment.trim(),
+            };
+
+            const res = await fetch("/api/comments", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            });
+
+            const saved = await res.json();
+            setComments([...comments, saved]);
+
+            setComment("");
+            setName("");
+          };
+
+          /* Like */
+          const like = async (id: number) => {
+            const res = await fetch("/api/comments", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id }),
+            });
+
+            const updated = await res.json();
+
+            setComments((prev) =>
+              prev.map((c) => (c.id === id ? updated : c))
+            );
+          };
+
+          /* ---------- DEVUELVE EL JSX ORIGINAL + NUEVO HISTÓRICO ---------- */
+          return (
+            <>
+              {!anonymous && (
+                <input
+                  placeholder={t.name}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full mb-6 p-5 rounded-xl border text-xl"
+                />
+              )}
+
+              <textarea
+                placeholder={t.placeholder}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="w-full p-6 rounded-xl border min-h-[160px] text-xl mb-6"
+              />
+
+              <label className="flex items-center gap-3 mb-8 text-lg">
+                <input
+                  type="checkbox"
+                  checked={anonymous}
+                  onChange={() => setAnonymous(!anonymous)}
+                />
+                {t.anonymous}
+              </label>
+
+              <button
+                disabled={!comment.trim()}
+                onClick={sendComment}
+                className={`px-10 py-5 rounded-full text-xl font-bold ${
+                  comment.trim()
+                    ? "bg-gray-500 text-white"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                {t.send}
+              </button>
+
+              {/* HISTÓRICO */}
+              <div className="mt-10 space-y-6">
+                {comments.map((c) => (
+                  <div
+                    key={c.id}
+                    className="bg-gray-100 p-6 rounded-xl shadow flex flex-col"
+                  >
+                    <p className="font-semibold text-lg">{c.name}</p>
+                    <p className="text-gray-700 text-lg mt-2">{c.text}</p>
+
+                    <button
+                      onClick={() => like(c.id)}
+                      className="mt-3 flex items-center gap-2 text-red-500 hover:scale-110 transition"
+                    >
+                      ❤️ {c.likes}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          );
+        })()}
       </section>
 
       {/* RECOMMENDATIONS */}
