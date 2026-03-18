@@ -1,14 +1,13 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import React, { useState, useEffect, useContext, useMemo, createContext } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { LanguageContext } from "../RootProviders";
 import { SearchContext } from "@/context/SearchContext";
 import { Merriweather } from "next/font/google";
-
-
+import { EntrevistasContext, Entrevista } from "@/context/EntrevistasContext";
 
 const merriweather = Merriweather({
   subsets: ["latin"],
@@ -16,26 +15,7 @@ const merriweather = Merriweather({
   variable: "--font-merriweather",
 });
 
-// --- Interfaces ---
-export interface Entrevista {
-  id: number;
-  titulo: { ES: string; EN: string };
-  descripcion: { ES: string; EN: string };
-  fecha: string;
-  fechaISO: string;
-  likes: number;
-  videoUrl?: string;
-}
-
-// --- Context para entrevistas ---
-interface EntrevistasContextType {
-  entrevistas: Entrevista[];
-}
-export const EntrevistasContext = createContext<EntrevistasContextType>({
-  entrevistas: [],
-});
-
-// --- Formatear tiempo restante ---
+// --- Función para formatear countdown ---
 function formatCountdown(diffMs: number) {
   const totalSeconds = Math.max(0, Math.floor(diffMs / 1000));
   const days = Math.floor(totalSeconds / (3600 * 24));
@@ -45,7 +25,6 @@ function formatCountdown(diffMs: number) {
   return `${days}d ${hours}h ${minutes}m ${seconds}s`;
 }
 
-// --- Componente principal ---
 export default function HistoriasVivas() {
   const { language } = useContext(LanguageContext);
   const { dateFilter } = useContext(SearchContext);
@@ -56,7 +35,7 @@ export default function HistoriasVivas() {
   const [userVote, setUserVote] = useState<"like" | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const targetDate = new Date("2026-02-25T00:00:00");
+  const targetDate = new Date("2026-03-03T00:00:00");
   const [countdown, setCountdown] = useState("");
   const [beforeNewYear, setBeforeNewYear] = useState(true);
 
@@ -106,7 +85,7 @@ export default function HistoriasVivas() {
     <EntrevistasContext.Provider value={{ entrevistas }}>
       <div className={`${merriweather.variable} bg-white min-h-screen text-[var(--color-foreground)] px-4 md:px-16 py-12 space-y-16`}>
 
-        {/* Countdown si antes del 25 de febrero */}
+        {/* Countdown */}
         {beforeNewYear && (
           <section className="bg-[var(--color-card)]/40 rounded-3xl shadow-lg p-12 flex flex-col items-center justify-center text-center">
             <h1 className="text-3xl md:text-4xl mb-4 font-bold">

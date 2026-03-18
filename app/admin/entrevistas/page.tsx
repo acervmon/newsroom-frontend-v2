@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 
 import { useState, useContext } from "react";
 import { LanguageContext } from "../../RootProviders";
-import axios from "axios";
 
 export default function AdminEntrevistas() {
   const { language } = useContext(LanguageContext);
@@ -19,7 +18,7 @@ export default function AdminEntrevistas() {
   const [mensaje, setMensaje] = useState("");
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files ? e.target.files[0] : null;
+    const file = e.target.files?.[0] ?? null;
     if (!file) return;
 
     if (!file.type.startsWith("video/")) {
@@ -28,7 +27,6 @@ export default function AdminEntrevistas() {
       setVideoPreview(null);
       return;
     }
-
     if (file.size > 500 * 1024 * 1024) {
       setMensaje(language === "ES" ? "El video es demasiado grande (máx 500MB)" : "Video is too large (max 500MB)");
       setVideoFile(null);
@@ -60,19 +58,18 @@ export default function AdminEntrevistas() {
       formData.append("descripcionEN", descripcionEN);
       formData.append("fecha", fecha);
 
-      const res = await axios.post("/api/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
       });
 
-      if (res.status === 200) {
+      const data = await res.json();
+
+      if (res.ok) {
         setMensaje(language === "ES" ? "✅ Entrevista subida correctamente" : "✅ Interview uploaded successfully");
-        setTituloES("");
-        setTituloEN("");
-        setDescripcionES("");
-        setDescripcionEN("");
-        setFecha("");
-        setVideoFile(null);
-        setVideoPreview(null);
+        console.log("Video URL:", data.url);
+        setTituloES(""); setTituloEN(""); setDescripcionES(""); setDescripcionEN(""); setFecha("");
+        setVideoFile(null); setVideoPreview(null);
       } else {
         setMensaje(language === "ES" ? "❌ Error subiendo la entrevista" : "❌ Error uploading interview");
       }
@@ -91,16 +88,14 @@ export default function AdminEntrevistas() {
       </h1>
 
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow-md space-y-4 max-w-2xl">
-        <input placeholder={language === "ES" ? "Título (ES)" : "Title (ES)"} value={tituloES} onChange={(e) => setTituloES(e.target.value)} required className="w-full border p-2 rounded"/>
-        <input placeholder={language === "ES" ? "Título (EN)" : "Title (EN)"} value={tituloEN} onChange={(e) => setTituloEN(e.target.value)} required className="w-full border p-2 rounded"/>
-        <textarea placeholder={language === "ES" ? "Descripción (ES)" : "Description (ES)"} value={descripcionES} onChange={(e) => setDescripcionES(e.target.value)} required className="w-full border p-2 rounded"/>
-        <textarea placeholder={language === "ES" ? "Descripción (EN)" : "Description (EN)"} value={descripcionEN} onChange={(e) => setDescripcionEN(e.target.value)} required className="w-full border p-2 rounded"/>
-        <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} required className="border p-2 rounded w-full"/>
+        <input placeholder={language === "ES" ? "Título (ES)" : "Title (ES)"} value={tituloES} onChange={e => setTituloES(e.target.value)} required className="w-full border p-2 rounded"/>
+        <input placeholder={language === "ES" ? "Título (EN)" : "Title (EN)"} value={tituloEN} onChange={e => setTituloEN(e.target.value)} required className="w-full border p-2 rounded"/>
+        <textarea placeholder={language === "ES" ? "Descripción (ES)" : "Description (ES)"} value={descripcionES} onChange={e => setDescripcionES(e.target.value)} required className="w-full border p-2 rounded"/>
+        <textarea placeholder={language === "ES" ? "Descripción (EN)" : "Description (EN)"} value={descripcionEN} onChange={e => setDescripcionEN(e.target.value)} required className="w-full border p-2 rounded"/>
+        <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} required className="border p-2 rounded w-full"/>
         <input type="file" accept="video/*" onChange={handleVideoChange} required />
         {videoFile && <p className="text-sm mt-1">{language === "ES" ? "Seleccionado:" : "Selected:"} {videoFile.name}</p>}
-        {videoPreview && (
-          <video src={videoPreview} controls className="mt-2 w-full max-h-96 rounded-lg border" />
-        )}
+        {videoPreview && <video src={videoPreview} controls className="mt-2 w-full max-h-96 rounded-lg border" />}
         <button type="submit" disabled={subiendo} className="px-6 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
           {subiendo ? (language === "ES" ? "Subiendo..." : "Uploading...") : (language === "ES" ? "Subir Entrevista" : "Upload Interview")}
         </button>

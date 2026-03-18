@@ -1,5 +1,6 @@
 "use client";
 
+<<<<<<< Updated upstream
 import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSearch } from "@/context/SearchContext";
@@ -21,6 +22,17 @@ function BuscarInner() {
   }, [keywordFromUrl, keyword, setKeyword]);
 
   return <SearchResultsPage />;
+=======
+import { Suspense } from "react";
+import BuscarClient from "./BuscarClient";
+
+export default function BuscarPage() {
+  return (
+    <Suspense fallback={null}>
+      <BuscarClient />
+    </Suspense>
+  );
+>>>>>>> Stashed changes
 }
 
 export default function BuscarPage() {
