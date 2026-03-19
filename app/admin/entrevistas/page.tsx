@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { useState, useContext } from "react";
 import { LanguageContext } from "../../RootProviders";
 
+#SI
 export default function AdminEntrevistas() {
   const { language } = useContext(LanguageContext);
 
@@ -70,6 +71,7 @@ export default function AdminEntrevistas() {
         xhr.setRequestHeader("Content-Type", videoFile.type);
 
         xhr.upload.onprogress = (e) => {
+
           if (e.lengthComputable) {
             setProgreso(Math.round((e.loaded / e.total) * 100));
           }
