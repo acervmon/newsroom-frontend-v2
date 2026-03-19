@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import { useState, useContext } from "react";
 import { LanguageContext } from "../../RootProviders";
 
-#SI
+
 export default function AdminEntrevistas() {
   const { language } = useContext(LanguageContext);
 
