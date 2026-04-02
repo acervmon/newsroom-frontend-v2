@@ -16,18 +16,25 @@ export async function POST(req: Request) {
   try {
     const { key, uploadId, parts } = await req.json();
 
-    console.log("🧩 Multipart Complete");
+    console.log("🧩 Comenzando CompleteMultipartUpload");
     console.log("Key:", key);
     console.log("UploadId:", uploadId);
-    console.log("Parts:", parts.length);
+    console.log("Número de partes:", parts?.length);
 
-    // 🔥 Asegurar formato correcto AWS
+    if (!parts || parts.length === 0) {
+      throw new Error("No se recibieron partes");
+    }
+
+    // ✅ Asegurar formato correcto para AWS
     const sortedParts = parts
       .map((p: any) => ({
-        ETag: String(p.ETag),
-        PartNumber: Number(p.PartNumber),
+        ETag: p.ETag, // 🔥 NO modificar ETag
+        PartNumber: Number(p.PartNumber), // 🔥 asegurar número
       }))
-      .sort((a: any, b: any) => a.PartNumber - b.PartNumber);
+      .sort(
+        (a: { PartNumber: number }, b: { PartNumber: number }) =>
+          a.PartNumber - b.PartNumber
+      );
 
     console.log("Parts ordenadas:", sortedParts);
 
@@ -42,19 +49,24 @@ export async function POST(req: Request) {
 
     const response = await s3.send(command);
 
-    console.log("✅ Multipart completado");
+    console.log("✅ Multipart completado correctamente");
     console.log("AWS Response:", response);
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({
+      ok: true,
+      response,
+    });
 
   } catch (error: any) {
-    console.error("❌ ERROR AWS COMPLETAR MULTIPART:");
-    console.error(error);
+    console.error("❌ ERROR COMPLETANDO MULTIPART:");
     console.error("Message:", error?.message);
     console.error("Name:", error?.name);
+    console.error("Stack:", error?.stack);
 
     return NextResponse.json(
-      { error: error?.message || "Error completando Multipart Upload" },
+      {
+        error: error?.message || "Error completando Multipart Upload",
+      },
       { status: 500 }
     );
   }
