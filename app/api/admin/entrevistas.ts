@@ -6,7 +6,7 @@ export async function POST(req: Request) {
     const data = await req.json();
     console.log("💾 Guardando entrevista:", data);
 
-    // TODO: Guardar en tu DB porfa
+    // TODO: Guardar en tu DB porfavor
 
     return NextResponse.json({ ok: true });
   } catch (error) {
