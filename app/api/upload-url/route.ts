@@ -42,7 +42,7 @@ export async function POST(req: Request) {
           UploadId: uploadId,
           PartNumber: partNumber,
         }),
-        { expiresIn: 60 * 15 }
+        { expiresIn: 60 * 60 * 24 }
       );
       partUrls.push(url);
     }
