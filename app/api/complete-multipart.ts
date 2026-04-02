@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { S3Client, CompleteMultipartUploadCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  CompleteMultipartUploadCommand,
+} from "@aws-sdk/client-s3";
 
 const s3 = new S3Client({
   region: process.env.AWS_S3_UPLOADER_REGION,
@@ -13,17 +16,40 @@ export async function POST(req: Request) {
   try {
     const { key, uploadId, parts } = await req.json();
 
-    const completeCommand = new CompleteMultipartUploadCommand({
+    console.log("🧩 Multipart Complete");
+    console.log("Key:", key);
+    console.log("UploadId:", uploadId);
+    console.log("Parts:", parts);
+
+    // 🔥 Ordenar partes (OBLIGATORIO)
+    const sortedParts = parts
+      .map((p: any) => ({
+        ETag: p.ETag.replace(/"/g, ""), // quitar comillas si existen
+        PartNumber: p.PartNumber,
+      }))
+      .sort((a: any, b: any) => a.PartNumber - b.PartNumber);
+
+    const command = new CompleteMultipartUploadCommand({
       Bucket: process.env.AWS_S3_BUCKET,
       Key: key,
       UploadId: uploadId,
-      MultipartUpload: { Parts: parts },
+      MultipartUpload: {
+        Parts: sortedParts,
+      },
     });
 
-    await s3.send(completeCommand);
+    await s3.send(command);
+
+    console.log("✅ Multipart completado");
+
     return NextResponse.json({ ok: true });
+
   } catch (error) {
     console.error("❌ Error completando Multipart Upload:", error);
-    return NextResponse.json({ error: "Error completando Multipart Upload" }, { status: 500 });
+
+    return NextResponse.json(
+      { error: "Error completando Multipart Upload" },
+      { status: 500 }
+    );
   }
 }
