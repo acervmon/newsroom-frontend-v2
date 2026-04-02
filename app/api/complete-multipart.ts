@@ -19,12 +19,15 @@ export async function POST(req: Request) {
     console.log("🧩 Multipart Complete");
     console.log("Key:", key);
     console.log("UploadId:", uploadId);
-    console.log("Parts recibidas:", parts);
+    console.log("Parts:", parts.length);
 
-    // 🔥 IMPORTANTE: NO modificar ETag
-    const sortedParts = parts.sort(
-      (a: any, b: any) => a.PartNumber - b.PartNumber
-    );
+    // 🔥 Asegurar formato correcto AWS
+    const sortedParts = parts
+      .map((p: any) => ({
+        ETag: String(p.ETag),
+        PartNumber: Number(p.PartNumber),
+      }))
+      .sort((a: any, b: any) => a.PartNumber - b.PartNumber);
 
     console.log("Parts ordenadas:", sortedParts);
 
@@ -39,13 +42,13 @@ export async function POST(req: Request) {
 
     const response = await s3.send(command);
 
-    console.log("✅ Multipart completado correctamente");
-    console.log("Respuesta AWS:", response);
+    console.log("✅ Multipart completado");
+    console.log("AWS Response:", response);
 
     return NextResponse.json({ ok: true });
 
   } catch (error: any) {
-    console.error("❌ ERROR COMPLETANDO MULTIPART:");
+    console.error("❌ ERROR AWS COMPLETAR MULTIPART:");
     console.error(error);
     console.error("Message:", error?.message);
     console.error("Name:", error?.name);
